@@ -390,7 +390,27 @@ export function calculateHealthScore(
     .reduce((a, t) => a + t.amount, 0);
   const totalSpent = monthExpenses.reduce((a, t) => a + t.amount, 0);
 
+  const hasAnyData =
+    transactions.length > 0 ||
+    !!budget ||
+    savingsGoals.length > 0 ||
+    profile.monthly_income > 0;
+
   const factors: HealthScore['factors'] = [];
+
+  if (!hasAnyData) {
+    return {
+      score: 0,
+      rating: 'poor',
+      factors: [
+        { name: 'Savings Rate', score: 0, weight: 0.25, detail: 'No data yet' },
+        { name: 'Budget Adherence', score: 0, weight: 0.25, detail: 'No data yet' },
+        { name: 'Overspending Frequency', score: 0, weight: 0.2, detail: 'No data yet' },
+        { name: 'Emergency Fund Progress', score: 0, weight: 0.15, detail: 'No data yet' },
+        { name: 'Expense-to-Income Ratio', score: 0, weight: 0.15, detail: 'No data yet' },
+      ],
+    };
+  }
 
   const savingsRate = monthIncome > 0 ? ((monthIncome - totalSpent) / monthIncome) * 100 : 0;
   factors.push({
@@ -404,7 +424,7 @@ export function calculateHealthScore(
   const budgetedCats = catSpending.filter((c) => c.budgeted > 0);
   const adherence = budgetedCats.length > 0
     ? budgetedCats.filter((c) => c.warning_level !== 'red').length / budgetedCats.length
-    : 1;
+    : 0;
   factors.push({
     name: 'Budget Adherence',
     score: adherence * 100,
@@ -417,20 +437,31 @@ export function calculateHealthScore(
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     last4Months.push(monthKey(d));
   }
+
+  const budgetByMonth = new Map<string, Budget | null>();
+  for (const month of last4Months) {
+    const monthBudget = month === mk ? budget : null;
+    budgetByMonth.set(month, monthBudget || null);
+  }
+
   const overspendCount = last4Months.reduce((count, m) => {
-    const monthCats = catSpending;
+    const monthDate = new Date(`${m}-01`);
+    const monthBudget = budgetByMonth.get(m) || null;
+    const monthCats = getCategorySpending(transactions, categories, monthBudget, monthDate);
     return count + monthCats.filter((c) => c.warning_level === 'red').length;
   }, 0);
+
+  const hasOverspendHistory = transactions.some((t) => t.type === 'expense');
   factors.push({
     name: 'Overspending Frequency',
-    score: Math.max(0, 100 - overspendCount * 15),
+    score: hasOverspendHistory ? Math.max(0, 100 - overspendCount * 15) : 0,
     weight: 0.2,
     detail: `${overspendCount} overspend events in 4 months`,
   });
 
   const totalGoalTarget = savingsGoals.reduce((a, g) => a + g.target_amount, 0);
   const totalGoalCurrent = savingsGoals.reduce((a, g) => a + g.current_amount, 0);
-  const goalProgress = totalGoalTarget > 0 ? (totalGoalCurrent / totalGoalTarget) * 100 : 100;
+  const goalProgress = totalGoalTarget > 0 ? (totalGoalCurrent / totalGoalTarget) * 100 : 0;
   factors.push({
     name: 'Emergency Fund Progress',
     score: Math.min(100, goalProgress),
@@ -438,10 +469,10 @@ export function calculateHealthScore(
     detail: totalGoalTarget > 0 ? `${Math.round(goalProgress)}% of goal saved` : 'No goals set',
   });
 
-  const expenseRatio = monthIncome > 0 ? (totalSpent / monthIncome) * 100 : 100;
+  const expenseRatio = monthIncome > 0 ? (totalSpent / monthIncome) * 100 : 0;
   factors.push({
     name: 'Expense-to-Income Ratio',
-    score: Math.max(0, 100 - Math.max(0, expenseRatio - 50) * 2),
+    score: monthIncome > 0 ? Math.max(0, 100 - Math.max(0, expenseRatio - 50) * 2) : 0,
     weight: 0.15,
     detail: `${Math.round(expenseRatio)}% of income spent`,
   });
