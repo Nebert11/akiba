@@ -50,9 +50,11 @@ export function AppLayout() {
         )}
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-slate-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600">
-            <Wallet className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Akiba"
+            className="h-9 w-auto max-w-[140px] object-contain"
+          />
           <span className="text-lg font-bold text-slate-900">Akiba</span>
         </div>
 

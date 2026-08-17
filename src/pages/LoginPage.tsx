@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Wallet, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -30,9 +30,11 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/30">
-            <Wallet className="h-7 w-7 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Akiba"
+            className="mx-auto mb-4 h-16 w-auto max-w-[220px] object-contain sm:h-20"
+          />
           <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to your Akiba account</p>
         </div>

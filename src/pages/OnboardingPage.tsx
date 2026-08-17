@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Check, ArrowRight, ArrowLeft, SkipForward } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, SkipForward } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -92,9 +92,11 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 py-8 px-4">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/30">
-            <Wallet className="h-6 w-6 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Akiba"
+            className="mx-auto mb-3 h-14 w-auto max-w-[200px] object-contain sm:h-16"
+          />
           <h1 className="text-2xl font-bold text-slate-900">Let's set up your profile</h1>
           <p className="mt-1 text-sm text-slate-500">Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
         </div>
