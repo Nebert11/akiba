@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Sparkles, Check, X, Info } from 'lucide-react';
+import { Sparkles, Check, X, Info, Trash2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ import { WARNING_COLORS } from '@/lib/constants';
 import type { BudgetSuggestion } from '@/types';
 
 export function BudgetPage() {
-  const { transactions, categories, budgets, savingsGoals, addBudget } = useData();
+  const { transactions, categories, budgets, savingsGoals, addBudget, deleteBudget } = useData();
   const { profile } = useAuth();
   const currency = profile?.currency || 'KES';
   const now = new Date();
@@ -24,6 +24,7 @@ export function BudgetPage() {
   const [editableAmounts, setEditableAmounts] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);  
   const [error, setError] = useState<string | null>(null);
 
   const catSpending = useMemo(
@@ -42,6 +43,19 @@ export function BudgetPage() {
       setEditableAmounts(amounts);
       setGenerating(false);
     }, 300);
+  }
+
+  async function handleDeleteCurrentBudget() {
+    if (!currentBudget) return;
+    const confirmed = window.confirm('Delete current budget? This will remove all associated budget categories and cannot be undone.');
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError(null);
+    const { error } = await deleteBudget(currentBudget.id);
+    setDeleting(false);
+
+    if (error) setError(error);
   }
 
   async function saveBudget(status: 'accepted' | 'modified') {
@@ -129,6 +143,11 @@ export function BudgetPage() {
               <Button variant="secondary" onClick={() => saveBudget('modified')} disabled={saving}>Modify & Save</Button>
               <Button onClick={() => saveBudget('accepted')} disabled={saving}><Check className="h-4 w-4" /> {saving ? 'Saving...' : 'Accept Budget'}</Button>
             </div>
+            {error && (
+              <div className="mx-6 mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200">
+                {error}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -139,7 +158,14 @@ export function BudgetPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Budget vs Actual — {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</CardTitle>
-                <Badge color="#10b981">{currentBudget.status}</Badge>
+                {/* <Badge color="#10b981">{currentBudget.status}</Badge> */}
+                <div className="">
+                <Badge color='#10b981'>{currentBudget.status}</Badge>
+                <Button variant='danger' size='sm' onClick={handleDeleteCurrentBudget} disabled={deleting}>
+                  <Trash2 className='h-4 w-4' />
+                  {deleting ? 'Deleting...' : 'Delete Budget'}
+                </Button>
+              </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">

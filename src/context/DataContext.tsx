@@ -29,6 +29,7 @@ interface DataContextValue {
   deleteAccount: (id: string) => Promise<{ error: string | null }>;
   addCategory: (cat: Partial<Category>) => Promise<{ error: string | null }>;
   addBudget: (budget: Partial<Budget>, cats: { category_id: string; planned_amount: number; reason?: string }[]) => Promise<{ error: string | null }>;
+  deleteBudget: (id: string) => Promise<{ error: string | null }>;
   addSavingsGoal: (goal: Partial<SavingsGoal>) => Promise<{ error: string | null }>;
   updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => Promise<{ error: string | null }>;
   deleteSavingsGoal: (id: string) => Promise<{ error: string | null }>;
@@ -85,10 +86,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     ] = await Promise.all([
       supabase.from('accounts').select('*').order('created_at'),
       supabase.from('categories').select('*').order('name'),
-      supabase.from('transactions').select('*, category(*), account(*), to_account(*)').order('transaction_date', { ascending: false }),
-      supabase.from('budgets').select('*, budget_categories(*, category(*))').order('month_date', { ascending: false }),
+      supabase.from('transactions').select('*, category:categories(*), account:accounts!transactions_account_id_fkey(*), to_account:accounts!transactions_to_account_id_fkey(*)').order('transaction_date', { ascending: false }),
+      supabase.from('budgets').select('*, budget_categories(*, category:categories(*))').order('month_date', { ascending: false }),
       supabase.from('savings_goals').select('*').order('created_at'),
-      supabase.from('recurring_transactions').select('*, category(*), account(*)').order('next_date'),
+      supabase.from('recurring_transactions').select('*, category:categories(*), account:accounts(*)').order('next_date'),
       supabase.from('notifications').select('*').order('created_at', { ascending: false }),
       supabase.from('fee_rules').select('*').eq('active', true).order('provider, transaction_type, min_amount'),
     ]);
@@ -165,6 +166,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }, [refreshAll]);
 
+  const deleteBudget = useCallback(async (id: string) => {
+    const {error} = await supabase.from('budgets').delete().eq('id', id);
+    if (!error) await refreshAll();
+    return {error: error?.message || null };
+  }, [refreshAll]);
+
   const addSavingsGoal = useCallback(async (goal: Partial<SavingsGoal>) => {
     const { error } = await supabase.from('savings_goals').insert(goal);
     if (!error) await refreshAll();
@@ -219,6 +226,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteAccount,
         addCategory,
         addBudget,
+        deleteBudget,
         addSavingsGoal,
         updateSavingsGoal,
         deleteSavingsGoal,
