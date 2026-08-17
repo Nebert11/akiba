@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -6,12 +6,21 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, session, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!session || authLoading) return;
+    if (profile && !profile.onboarding_complete) {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+    navigate('/dashboard', { replace: true });
+  }, [session, profile, authLoading, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,8 +30,6 @@ export function LoginPage() {
     setLoading(false);
     if (error) {
       setError(error);
-    } else {
-      navigate('/dashboard');
     }
   }
 

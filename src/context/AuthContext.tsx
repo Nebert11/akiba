@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session) {
+        setLoading(true);
         loadProfile(data.session.user.id);
       } else {
         setLoading(false);
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       if (sess) {
+        setLoading(true);
         (async () => {
           await loadProfile(sess.user.id);
         })();
@@ -69,8 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message || null };
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      return { error: error.message };
+    }
+
+    setSession(data.session);
+    if (data.session?.user?.id) {
+      await loadProfile(data.session.user.id);
+    } else {
+      setLoading(false);
+    }
+    return { error: null };
   }
 
   async function signOut() {
